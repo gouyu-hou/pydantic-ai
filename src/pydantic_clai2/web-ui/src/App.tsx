@@ -276,14 +276,27 @@ export function App() {
       const next =
         key !== undefined ? (shownKey === key ? null : key) : shownKey || !firstPanel ? null : panelKey(firstPanel)
       setSidePanel(next)
-      if (next) setChanges(false)
+      if (next) {
+        setChanges(false)
+        setMonty(false)
+      }
     },
     [shownKey, firstPanel],
   )
+  // The right-hand column holds one panel: Changes, a plugin panel and Monty replace each other, so the chat
+  // keeps its width. Opening one is what closes the others; closing one leaves the column empty.
   const toggleChanges = useCallback(() => {
     setChanges((open) => !open)
     setSidePanel(null)
+    setMonty(false)
   }, [])
+  const toggleMonty = useCallback(() => {
+    if (!monty) {
+      setChanges(false)
+      setSidePanel(null)
+    }
+    setMonty(!monty)
+  }, [monty])
   // The files may have changed when a turn ends, so the count and the panel ask again then; not while one runs.
   const changesActive = connection === 'open' && !chat.running
   // The page hears a turn end before the session keeps its messages, so the count asks again once it saves them.
@@ -541,7 +554,7 @@ export function App() {
         newSession()
       } else if (mod && event.key === 'j') {
         event.preventDefault()
-        setMonty((open) => !open)
+        toggleMonty()
       } else if (mod && event.shiftKey && event.key.toLowerCase() === 'l') {
         event.preventDefault()
         togglePanel()
@@ -572,7 +585,7 @@ export function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [running, stop, orchestrating, workerTask, preview, showError, togglePanel, toggleChanges, openSettings, newSession, focusSessions])
+  }, [running, stop, orchestrating, workerTask, preview, showError, togglePanel, toggleChanges, toggleMonty, openSettings, newSession, focusSessions])
 
   const status = chat.status
   // A session still opening is named from its sidebar row, never as a new session while its snapshot comes.
@@ -724,7 +737,7 @@ export function App() {
               </button>
               <button
                 className={`icon-button monty-toggle ${monty ? 'active' : ''}`}
-                onClick={() => setMonty(!monty)}
+                onClick={toggleMonty}
                 title={`${monty ? 'Hide' : 'Show'} Monty, the run_code sandbox (${MOD}J)`}
                 aria-pressed={monty}
               >
